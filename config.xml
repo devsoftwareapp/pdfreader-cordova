@@ -54,6 +54,6 @@
     <plugin name="cordova-plugin-android-permissions" />
     <plugin name="cordova-plugin-file-opener2" />
     <plugin name="cordova-plugin-dialogs" />
-    <plugin name="cordova-plugin-splashscreen" />
+    
 
 </widget>
