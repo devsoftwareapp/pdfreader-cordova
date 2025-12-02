@@ -2,7 +2,6 @@
 
 <html dir="ltr" mozdisallowselectionprint>
   <head>
-    <script src="../cordova.js"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="google" content="notranslate" />
@@ -15,61 +14,6 @@
     <link rel="stylesheet" href="viewer.css" />
 
   <script src="viewer.mjs" type="module"></script>
-  
-  
-  
-  <!-- MERVANİ -->
-  
-  
-  
-
-  
-  
-  
-  
-
-  
-  <script>
-document.addEventListener("webviewerloaded", () => {
-
-  const params = new URLSearchParams(window.location.search);
-  const base64 = params.get("base64");
-  if (!base64) return;
-
-  // Base64 → Uint8Array
-  const b64 = base64.split(',')[1];
-  const raw = atob(b64);
-  const len = raw.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = raw.charCodeAt(i);
-
-  // Uint8Array → Blob → Blob URL
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  // Viewer initialize olana kadar bekle
-  const waiter = setInterval(() => {
-    if (!window.PDFViewerApplication || !PDFViewerApplication.initialized) return;
-
-    clearInterval(waiter);
-
-    // 🔥 PDF.js v5.x için doğru kullanım: { url: blobUrl }
-    PDFViewerApplication.open({ url: blobUrl });
-
-  }, 50);
-});
-</script>
-      
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  <!-- MERVANİ -->
   
   
   </head>
@@ -1172,37 +1116,75 @@ document.addEventListener("webviewerloaded", () => {
     <!-- outerContainer -->
     <div id="printContainer"></div>
 
-<!-- FOR SAVED FUNCTION -->
+<!-- pdf acma- kaydetme vs -->
 
+<script src="cordova.js"></script>
 
 <script>
+
+/* -----------------------------------------------------
+   1) Base64 ile PDF açma (viewer.html?base64=...)
+----------------------------------------------------- */
+document.addEventListener("webviewerloaded", () => {
+
+  const params = new URLSearchParams(window.location.search);
+  const base64 = params.get("base64");
+  if (!base64) return;
+
+  const b64 = base64.split(',')[1];
+  const raw = atob(b64);
+  const len = raw.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = raw.charCodeAt(i);
+
+  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  const waiter = setInterval(() => {
+    if (!window.PDFViewerApplication || !PDFViewerApplication.initialized) return;
+    clearInterval(waiter);
+
+    PDFViewerApplication.open({ url: blobUrl });
+
+  }, 50);
+});
+
+
+/* -----------------------------------------------------
+   2) Cordova READY
+----------------------------------------------------- */
+document.addEventListener("deviceready", function () {
+    window.isCordovaReady = true;
+    console.log("Cordova READY inside viewer!");
+});
+
+
+/* -----------------------------------------------------
+   3) PDF.js üzerindeki Download butonuna tıklayınca kaydet
+----------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("secondaryDownload").addEventListener("click", async function () {
+
+  const btn = document.getElementById("secondaryDownload");
+  if (!btn) {
+    console.error("secondaryDownload butonu bulunamadı!");
+    return;
+  }
+
+  btn.addEventListener("click", async function () {
 
     try {
-      console.log("Kaydet butonu tıklandı.");
+      console.log("📥 Kaydet butonu tıklandı.");
 
-      // PDF URL’ini PDFJS içinde al
       const pdfUrl = PDFViewerApplication.url;
 
-      // Dosyayı çek
       const response = await fetch(pdfUrl);
       const blob = await response.blob();
 
-      // Cordova filesystem kullan
-      window.resolveLocalFileSystemURL(
-        cordova.file.externalDataDirectory,
-        function (dir) {
-          dir.getFile("dosya.pdf", { create: true }, function (file) {
+      const base64 = await blobToBase64(blob);
 
-            file.createWriter(function (fileWriter) {
-              fileWriter.write(blob);
-              alert("PDF Telefona Kaydedildi:\n" + file.nativeURL);
-            });
+      // Download/PDF Reader klasörüne kaydet
+      saveBase64PdfToDownloads(base64, "dosya.pdf");
 
-          });
-        }
-      );
     } catch (err) {
       console.error("Kaydetme hatası:", err);
       alert("Kaydetme başarısız: " + err);
@@ -1212,20 +1194,74 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+/* -------- blob → base64 -------- */
+function blobToBase64(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
 
 
+/* -----------------------------------------------------
+   4) Download/PDF Reader klasörüne PDF kaydet
+----------------------------------------------------- */
+function saveBase64PdfToDownloads(base64Data, fileName) {
+
+    window.resolveLocalFileSystemURL(
+        cordova.file.externalRootDirectory,
+        function (rootDir) {
+
+            rootDir.getDirectory("Download", { create: true }, function (downloadDir) {
+
+                downloadDir.getDirectory("PDF Reader", { create: true }, function (pdfReaderDir) {
+
+                    const base64Clean = base64Data.split(',')[1];
+
+                    pdfReaderDir.getFile(fileName, { create: true }, function (fileEntry) {
+
+                        fileEntry.createWriter(function (fileWriter) {
+
+                            const data = b64toBlob(base64Clean, "application/pdf");
+                            fileWriter.write(data);
+
+                            alert("PDF Telefona Kaydedildi:\n" + fileEntry.toURL());
+                        });
+
+                    }, err => console.log("File error:", err));
+
+                }, err => console.log("PDF Reader klasörü hatası:", err));
+
+            }, err => console.log("Download klasörü hatası:", err));
+        }
+    );
+}
 
 
-document.addEventListener("deviceready", function () {
-    window.isCordovaReady = true;
-    console.log("Cordova READY inside viewer!");
-});
+/* -------- base64 → Blob -------- */
+function b64toBlob(b64Data, contentType) {
+    contentType = contentType || '';
+    const sliceSize = 512;
 
+    const byteCharacters = atob(b64Data);
+    const byteArrays = [];
 
-  
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Array(slice.length);
+
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        byteArrays.push(new Uint8Array(byteNumbers));
+    }
+
+    return new Blob(byteArrays, { type: contentType });
+}
+
 </script>
-
-    
 
     
   </body>
