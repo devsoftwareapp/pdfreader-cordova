@@ -1,44 +1,40 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.devsoftware.pdfreader" version="1.0.0"
+<widget id="com.devsoftware.pdfreader"
+    version="1.0.0"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
     <name>PDFReader</name>
     <description>PDF Reader Application</description>
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Apache Cordova Team
+    </author>
 
+    <!-- UYGULAMA GİRİŞ DOSYASI -->
     <content src="web/index.html" />
+
+    <!-- GENEL AYARLAR -->
+    <preference name="Orientation" value="default" />
+    <preference name="SplashScreenDelay" value="2000" />
+    <preference name="FadeSplashScreenDuration" value="300" />
 
     <!-- ANDROID AYARLARI -->
     <platform name="android">
-
+        <!-- Minimum / Target / Compile SDK -->
         <preference name="android-minSdkVersion" value="24" />
         <preference name="android-targetSdkVersion" value="36" />
         <preference name="android-compileSdkVersion" value="36" />
 
-        <!-- İzinleri doğru şekilde ekle -->
-        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/uses-permission">
-            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-        </edit-config>
-
-        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/uses-permission">
-            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
-        </edit-config>
-
-        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/uses-permission">
-            <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-        </edit-config>
-
+        <!-- File API için önerilen ayar -->
         <preference name="AndroidPersistentFileLocation" value="Compatibility" />
-
     </platform>
 
-    <!-- Intent izinleri -->
+    <!-- İzin verilen dış yönlendirmeler -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 
-    <!-- Pluginler -->
+    <!-- PLUGINLER (izinleri otomatik ekler) -->
     <plugin name="cordova-plugin-file" />
-    <plugin name="cordova-plugin-file-transfer" />
     <plugin name="cordova-plugin-android-permissions" />
     <plugin name="cordova-plugin-file-opener2" />
     <plugin name="cordova-plugin-dialogs" />
