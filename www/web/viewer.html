@@ -1132,139 +1132,196 @@
 
 
 
-
 <script>
 /* -----------------------------------------------------
-   1) Base64 PDF’i yükle
+   1) Base64 ile PDF açma (index.html → viewer.html)
 ----------------------------------------------------- */
-document.addEventListener("webviewerloaded", function() {
+document.addEventListener("webviewerloaded", function () {
+  console.log("📄 PDF.js Yüklendi");
+
   const params = new URLSearchParams(window.location.search);
   const base64 = params.get("base64");
   if (!base64) return;
 
   try {
-    const clean = base64.includes(",") ? base64.split(",")[1] : base64;
-    const raw = atob(clean);
-    const arr = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    const pureBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
+    const binary = atob(pureBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
 
-    const blobUrl = URL.createObjectURL(new Blob([arr], { type: "application/pdf" }));
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
 
     const wait = setInterval(() => {
-      if (window.PDFViewerApplication?.initialized) {
+      if (window.PDFViewerApplication && PDFViewerApplication.initialized) {
         clearInterval(wait);
         PDFViewerApplication.open({ url: blobUrl });
+        console.log("✅ PDF Açıldı");
       }
-    }, 50);
-  } catch (err) {
-    console.error("PDF yükleme hatası:", err);
+    }, 80);
+  } catch (e) {
+    console.error("PDF açma hatası:", e);
   }
 });
 
 /* -----------------------------------------------------
-   2) CORDOVA READY
+   2) Cordova Ready Sonrası: Kaydet butonu aktif
 ----------------------------------------------------- */
 document.addEventListener("deviceready", function () {
-  console.log("Cordova ready");
-  initDownloadButton();
+  console.log("📱 Cordova Hazır");
+  initSaveButton();
 });
 
+// Tarayıcı test modu
 if (!window.cordova) {
-  console.log("Tarayıcı modu");
-  setTimeout(initDownloadButton, 1500);
+  console.log("🌐 Tarayıcı test modu");
+  setTimeout(initSaveButton, 2000);
 }
 
 /* -----------------------------------------------------
-   3) Kaydet Butonunu Bul
+   3) Kaydet butonunu bul ve event ekle
 ----------------------------------------------------- */
-function initDownloadButton() {
-  let attempt = 0;
-  const interval = setInterval(() => {
-    attempt++;
+function initSaveButton() {
+  let tries = 0;
+
+  const timer = setInterval(() => {
+    tries++;
     const btn = document.getElementById("secondaryDownload");
+
     if (btn) {
-      clearInterval(interval);
-      setupButton(btn);
+      clearInterval(timer);
+      console.log("✔ Kaydet butonu bulundu");
+      activateSaveButton(btn);
+    } else if (tries > 15) {
+      clearInterval(timer);
+      console.warn("❌ Kaydet butonu bulunamadı");
     }
-    if (attempt > 10) clearInterval(interval);
   }, 300);
 }
 
-function setupButton(btn) {
-  const clone = btn.cloneNode(true);
-  btn.parentNode.replaceChild(clone, btn);
+function activateSaveButton(btn) {
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
 
-  clone.addEventListener("click", function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    saveEditedPdf();
-  }, true);
-
-  console.log("Download butonu aktif");
+  newBtn.addEventListener(
+    "click",
+    function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("💾 Kaydet tıklandı");
+      saveEditedPDF();
+    },
+    true
+  );
 }
 
 /* -----------------------------------------------------
-   4) PDF’i al ve kaydet
+   4) PDF.js'den düzenlenmiş PDF verisini al
 ----------------------------------------------------- */
-function saveEditedPdf() {
-
+function saveEditedPDF() {
   if (!window.cordova) {
-    alert("Cordova yok - Android cihazda deneyin");
+    alert("Cordova yok, sadece cihazda çalışır.");
     return;
   }
 
-  if (!PDFViewerApplication?.pdfDocument) {
-    alert("PDF yüklenmedi");
+  if (!PDFViewerApplication || !PDFViewerApplication.pdfDocument) {
+    alert("PDF henüz yüklenmedi!");
     return;
   }
 
-  PDFViewerApplication.pdfDocument.getData()
-    .then((pdfData) => {
-      saveToAndroid(pdfData);
+  PDFViewerApplication.pdfDocument
+    .saveDocument()
+    .then((editedBuffer) => {
+      console.log("✏ Düzenlenmiş PDF Buffer alındı:", editedBuffer.byteLength);
+
+      const base64 = arrayBufferToBase64(editedBuffer);
+      saveBase64ToAndroid(base64);
     })
-    .catch(err => alert("Hata: " + err));
+    .catch((err) => {
+      console.error("Düzenleme kaydı alınamadı:", err);
+      showAlert("PDF düzenleme verisi alınamadı: " + err, "Hata");
+    });
+}
+
+/* ArrayBuffer → Base64 */
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 /* -----------------------------------------------------
-   5) Android Dosya Sistemi
+   5) Android Dosya Sistemine Kaydet (TÜM SÜRÜMLERDE ÇALIŞIR)
 ----------------------------------------------------- */
-function saveToAndroid(arrayBuffer) {
+function saveBase64ToAndroid(base64Data) {
+  const root = cordova.file.externalRootDirectory; // ✔ Android 10–14 uyumlu
   const fileName = "edited_" + Date.now() + ".pdf";
 
-  const root = cordova.file.externalStorageDirectory;  
-  const download = root + "Download/";
-  const folder = download + "PDF_Reader/";
+  window.resolveLocalFileSystemURL(
+    root,
+    function (rootEntry) {
+      // Download
+      rootEntry.getDirectory(
+        "Download",
+        { create: true },
+        function (downloadDir) {
+          // PDF_Reader (otomatik oluşturulur)
+          downloadDir.getDirectory(
+            "PDF_Reader",
+            { create: true },
+            function (pdfDir) {
+              // Dosyayı oluştur
+              pdfDir.getFile(
+                fileName,
+                { create: true },
+                function (fileEntry) {
+                  fileEntry.createWriter(function (writer) {
+                    const byteChars = atob(base64Data);
+                    const byteArray = new Uint8Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                      byteArray[i] = byteChars.charCodeAt(i);
+                    }
 
-  window.resolveLocalFileSystemURL(root, function (fsRoot) {
-    fsRoot.getDirectory("Download", { create: true }, function(dl) {
-      dl.getDirectory("PDF_Reader", { create: true }, function(dir) {
+                    const blob = new Blob([byteArray], {
+                      type: "application/pdf",
+                    });
 
-        dir.getFile(fileName, { create: true }, function(file) {
+                    writer.write(blob);
 
-          file.createWriter(function(writer) {
-
-            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-            writer.onwriteend = function () {
-              alert("PDF Kaydedildi:\nDownload/PDF_Reader/\n→ " + fileName);
-            };
-
-            writer.onerror = function (e) {
-              alert("Yazma hatası: " + e.toString());
-            };
-
-            writer.write(blob);
-          });
-
-        });
-
-      });
-    });
-  });
+                    showAlert(
+                      "PDF Kaydedildi:\nDownload/PDF_Reader/" + fileName,
+                      "Başarılı"
+                    );
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    },
+    function (err) {
+      showAlert("Storage erişilemedi: " + err, "Hata");
+    }
+  );
 }
 
+/* -----------------------------------------------------
+   6) Alert Fonksiyonu
+----------------------------------------------------- */
+function showAlert(message, title) {
+  if (navigator.notification && navigator.notification.alert) {
+    navigator.notification.alert(message, null, title || "Bilgi", "Tamam");
+  } else {
+    alert((title ? title + ": " : "") + message);
+  }
+}
 </script>
-
 
 
 
