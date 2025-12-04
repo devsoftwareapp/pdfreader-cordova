@@ -11,7 +11,6 @@
         Apache Cordova Team
     </author>
 
-
     <!-- UYGULAMA GİRİŞ DOSYASI -->
     <content src="web/index.html" />
 
@@ -28,36 +27,33 @@
 
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
 
-
     <!-- ANDROID PLATFORM AYARLARI -->
     <platform name="android">
-
-        <!-- Klasik depolama izinleri -->
-        <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-            <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30" />
-        </config-file>
-
-        <!-- Android 13+ yeni medya izinleri -->
+        <!-- Doğru izin yapılandırması -->
         <edit-config file="AndroidManifest.xml" target="/manifest" mode="merge">
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+            <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30" />
+            
+            <!-- Android 13+ için -->
             <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:maxSdkVersion="33" />
             <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" android:maxSdkVersion="33" />
             <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" android:maxSdkVersion="33" />
+            
+            <!-- Request legacy external storage for Android 10+ -->
+            <application android:requestLegacyExternalStorage="true" />
         </edit-config>
-
     </platform>
-
 
     <!-- HTTP/HTTPS erişimi -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 
-
-    <!-- PLUGINLER (GitHub ile uyumlu) -->
-    <plugin name="cordova-plugin-android-permissions" />
-    <plugin name="cordova-plugin-file" />
-    <plugin name="cordova-plugin-file-opener2" />
-    <plugin name="cordova-plugin-dialogs" />
+    <!-- PLUGINLER -->
+    <plugin name="cordova-plugin-android-permissions" spec="^1.1.2" />
+    <plugin name="cordova-plugin-file" spec="^7.0.0" />
+    <plugin name="cordova-plugin-file-opener2" spec="^3.1.0" />
+    <plugin name="cordova-plugin-dialogs" spec="^2.0.2" />
+    <plugin name="cordova-plugin-splashscreen" spec="^6.0.2" />
 
 </widget>
