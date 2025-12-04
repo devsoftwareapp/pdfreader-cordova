@@ -92,7 +92,6 @@
     .flex-col { flex-direction: column; }
 
     /* --- ARAMA MODU (IS-SEARCHING) --- */
-    /* Arama modundayken diğer her şeyi gizle */
     body.is-searching .tabs-container,
     body.is-searching .bottom-nav,
     body.is-searching .fab-container,
@@ -100,14 +99,12 @@
         display: none !important;
     }
 
-    /* Arama modunda top bar sadece header kadar olsun */
     body.is-searching .top-bar-container {
         max-height: var(--header-height);
-        box-shadow: none; /* Gölgeyi kaldır, daha temiz görünsün */
+        box-shadow: none;
         border-bottom: 1px solid var(--border);
     }
 
-    /* Arama modunda padding ayarları */
     body.is-searching .main-content {
         padding-top: var(--header-height);
         padding-bottom: 0;
@@ -115,7 +112,7 @@
     }
 
     body.is-searching .grid {
-        padding-top: 16px !important; /* Header altı boşluk - override */
+        padding-top: 16px !important;
     }
 
     /* --- SELECTION MODE STYLES --- */
@@ -367,8 +364,6 @@
 
     /* --- 4. ANA İÇERİK ALANI --- */
     .main-content {
-        /* Buradaki padding aslında absolute paneller için işlevsizdir ama
-           arama modunda layout akışı için tutuyoruz */
         padding-top: var(--top-bar-total);
         padding-bottom: var(--bottom-nav-height);
         height: 100vh;
@@ -393,7 +388,6 @@
         box-sizing: border-box; 
     }
     .static-panel {
-        /* Dosyalar ve Araçlar paneli için header boşluğu */
         padding-top: calc(var(--header-height) + 16px);
         overflow-y: auto; 
     }
@@ -407,15 +401,10 @@
         display: grid; 
         gap: 10px; 
         grid-template-columns: 1fr;
-        /* --- DÜZELTME: Padding ayarı --- */
-        /* Üst bar (124px) + 16px boşluk bırakarak başlatıyoruz.
-           Böylece ilk eleman barın altında kalmıyor. */
         padding: calc(var(--top-bar-total) + 16px) var(--card-gutter) 120px var(--card-gutter); 
         width: 100%;
     }
     
-    /* Static paneller (Dosyalar/Araçlar) kendi padding'ine sahip olduğu için 
-       içindeki grid padding'ini sıfırlıyoruz, yoksa çok aşağıda başlar */
     .static-panel .grid {
         padding-top: 0 !important;
         padding-bottom: 120px;
@@ -448,7 +437,7 @@
         width: var(--card-icon-size); 
         height: var(--card-icon-size); 
         flex-shrink: 0;
-        margin-left: 4px; /* Checkbox için yer aç */
+        margin-left: 4px;
     }
     
     .card-details {
@@ -478,7 +467,6 @@
         margin-top: 2px;
     }
 
-    /* Kart Aksiyonları (Sağ Taraf) */
     .card-actions {
         display: flex;
         align-items: center;
@@ -823,6 +811,8 @@
 </head>
 <body>
 
+  <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelect(event)">
+
   <div class="top-bar-container" id="topBar">
     <header class="app-header">
       
@@ -1133,10 +1123,10 @@
     const fabMenu = document.getElementById('fabMenu');
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawerOverlay');
-    const themeToggle = document.getElementById('themeToggle'); 
     const drawerItems = document.querySelectorAll('.drawer-item[data-accordion]');
     const settingsTabs = document.querySelectorAll('.setting-tab');
     const themeOptions = document.querySelectorAll('.theme-option');
+    const pdfFileInput = document.getElementById('pdfFileInput');
     
     // Search Variables
     const searchBtn = document.getElementById('searchBtn');
@@ -1158,6 +1148,9 @@
     let isSelectionMode = false;
     let selectedCards = new Set();
 
+    // Data Storage (In-Memory for this session)
+    let importedFiles = []; // PDF Yükle ile gelen dosyalar
+
     // Scroll & Swipe State
     let lastScrollY = 0;
     let startX = 0;
@@ -1171,7 +1164,7 @@
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
-      loadData();
+      loadData(); // Artık boş listeleri yüklüyor
       attachEvents();
       document.getElementById('recentPanel').scrollTop = 0;
       document.querySelector('.setting-tab').classList.add('active');
@@ -1204,21 +1197,34 @@
     }
 
     function loadData() {
-      const lists = ['recentList', 'deviceList', 'favoritesList'];
-      const longName = "Bu_Bir_Deneme_PDF_Dosyasının_Çok_Uzun_Adıdır_Kısaltılmalı.pdf";
-      const shortName = "Rapor_2025.pdf";
+      // Demo verileri kaldırıldı. Sadece boş durumları veya importedFiles dizisini render ediyoruz.
+      renderList('recentList', []); // Son kullanılanlar boş
+      renderList('favoritesList', []); // Favoriler boş
+      renderDeviceList(); // Cihazda listesi (başlangıçta boş veya import edilenler)
+    }
 
-      lists.forEach(listId => {
+    // Listeleri render eden yardımcı fonksiyon
+    function renderList(listId, files) {
         const list = document.getElementById(listId);
-        let html = '';
-        for(let i=1; i<=20; i++) {
-          const name = (i % 3 === 0) ? longName : shortName.replace('.pdf', `_${i}.pdf`);
-          const isFavorite = listId === 'favoritesList'; 
-          html += createCard(name, `${(Math.random()*5).toFixed(1)} MB`, '03.12.2025', isFavorite, i);
+        if (files.length === 0) {
+            list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon material-symbols-rounded">folder_open</div>
+                <p>Henüz dosya yok.</p>
+            </div>`;
+        } else {
+            let html = '';
+            files.forEach(file => {
+                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id);
+            });
+            list.innerHTML = html;
+            attachLongPressEvents();
         }
-        list.innerHTML = html;
-      });
-      attachLongPressEvents();
+    }
+
+    // Cihazda listesini render eden özel fonksiyon
+    function renderDeviceList() {
+        renderList('deviceList', importedFiles);
     }
 
     // --- KART OLUŞTURMA ---
@@ -1231,7 +1237,7 @@
       const theme = document.documentElement.getAttribute('data-theme');
       const bgColor = theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935';
       const textColor = theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935';
-      const fillStar = isFavorite ? 1 : 0; // Favori ise yıldızı doldur
+      const fillStar = isFavorite ? 1 : 0;
 
       const pdfIconSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -1286,6 +1292,91 @@
       </div>`;
     }
 
+    // --- DOSYA YÜKLEME VE TARAMA İŞLEMLERİ ---
+    
+    // FAB Action Handler
+    function handleFabAction(action) {
+      if (action === 'scan') {
+          alert('Kamera açılıyor: Belge Tarama Modu...');
+      } else if (action === 'import') {
+          // Gizli inputu tetikle
+          pdfFileInput.click();
+      }
+      // Menüyü kapat
+      fabMenu.classList.remove('show');
+    }
+
+    // Dosya Seçim İşleyicisi (FileReader ile BASE64 dönüşümü)
+    function handleFileSelect(event) {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            
+            // Tarih Formatlama
+            const now = new Date();
+            const formattedDate = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+            
+            // FileReader kullanarak dosyayı oku (Base64)
+            const reader = new FileReader();
+            
+            reader.onload = () => {
+                const base64Data = reader.result;
+
+                // Dosya Objesi Oluşturma
+                const newFile = {
+                    name: file.name,
+                    size: formatBytes(file.size),
+                    date: formattedDate,
+                    isFavorite: false,
+                    id: Date.now(), 
+                    base64: base64Data // <--- ÖNEMLİ: Base64 formatında saklıyoruz
+                };
+
+                // Listeye Ekle
+                importedFiles.unshift(newFile); 
+
+                alert(`${newFile.name} başarıyla içe aktarıldı.`);
+                
+                // Eğer Ana Sayfa'da değilsek ana sayfaya geç
+                if (currentNav !== 'home') {
+                    switchNav('home');
+                }
+                
+                // "Cihazda" sekmesine geç
+                switchTab('device', true);
+                
+                // Listeyi yeniden çiz
+                renderDeviceList();
+                
+                // Input değerini temizle
+                pdfFileInput.value = '';
+            };
+
+            // Dosyayı Base64 DataURL olarak oku
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Byte dönüştürücü
+    function formatBytes(bytes, decimals = 1) {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    }
+
+    // Cihaz PDF Tarama Fonksiyonu
+    function scanDeviceForPDFs() {
+        if (importedFiles.length === 0) {
+            alert("Cihazda henüz taranmış/import edilmiş PDF bulunamadı. Lütfen '+' butonu ile PDF ekleyin.");
+        } else {
+             alert(`${importedFiles.length} adet dosya listeleniyor.`);
+        }
+        renderDeviceList();
+    }
+
     // --- SELECTION MODE FUNCTIONS ---
     function enterSelectionMode() {
         isSelectionMode = true;
@@ -1325,7 +1416,6 @@
         
         updateSelectionCount();
         
-        // Eğer hiçbir öğe seçilmediyse seçim modundan çık
         if (selectedCards.size === 0) {
             exitSelectionMode();
         }
@@ -1373,14 +1463,14 @@
         }
         
         if (confirm(`${selectedCards.size} öğe silinecek. Emin misiniz?`)) {
+            // importedFiles dizisinden sil
             selectedCards.forEach(cardId => {
-                const card = document.querySelector(`.card[data-id="${cardId}"]`);
-                if (card) {
-                    card.style.display = 'none';
-                }
+                importedFiles = importedFiles.filter(file => file.id !== cardId);
             });
+            
             alert(`${selectedCards.size} öğe silindi.`);
             exitSelectionMode();
+            loadData(); // Listeleri yenile
         }
     }
     
@@ -1408,11 +1498,9 @@
         const actionText = isFavorite ? 'Favorilere Eklendi' : 'Favorilerden Kaldırıldı';
         alert(`"${card.dataset.name}" ${actionText}`);
         
-        if (document.querySelector('.nav-item.active').dataset.nav === 'home' && 
-            document.querySelector('.tab.active').dataset.tab === 'favorites') {
-             if(!isFavorite) {
-                 card.style.display = 'none';
-             }
+        const fileIndex = importedFiles.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            importedFiles[fileIndex].isFavorite = isFavorite;
         }
     }
 
@@ -1424,7 +1512,6 @@
     function attachLongPressEvents() {
         const cards = document.querySelectorAll('.card');
         cards.forEach(card => {
-            // Touchstart ve long press başlatma
             card.addEventListener('touchstart', (e) => {
                 if (e.target.closest('.icon-button')) {
                     clearTimeout(longPressTimer);
@@ -1457,7 +1544,22 @@
         }
         
         if (!isLongPress) {
-            alert('PDF Açılıyor: ' + name);
+            // 1. Kart ID'sine göre dosya verisini bul
+            const fileData = importedFiles.find(f => f.id === cardId);
+
+            // 2. Base64 verisi var mı kontrol et
+            if (fileData && fileData.base64) {
+                // 3. Base64 verisini URL parametresi olarak ekle
+                const url = "viewer.html?base64=" + 
+                            encodeURIComponent(fileData.base64) + 
+                            "&name=" + 
+                            encodeURIComponent(name);
+
+                // 4. Yönlendir
+                window.location.href = url;
+            } else {
+                alert("Dosya verisi bulunamadı!");
+            }
         }
     }
 
@@ -1523,31 +1625,24 @@
       contextOverlay.addEventListener('click', closeContextMenu);
 
       searchBtn.addEventListener('click', () => {
-          // Arama modunu başlat
           document.body.classList.add('is-searching'); 
           
           headerNormal.classList.add('hidden');
           searchBar.classList.add('active');
           searchInput.focus();
 
-          // Eğer şu an "Ana Sayfa"da değilsek (örn: Dosyalar/Araçlar), Ana Sayfa'ya geç ki kartları görebilelim.
           if (currentNav !== 'home') {
               switchNav('home');
           }
       });
 
-      // Eski odaklanma efektini kaldırıyoruz çünkü artık is-searching ile yönetiyoruz
-      // searchInput.addEventListener('focus', () => {}); 
-      // searchInput.addEventListener('blur', () => {});
-
       closeSearchBtn.addEventListener('click', () => {
-          // Arama modunu bitir
           document.body.classList.remove('is-searching');
 
           searchBar.classList.remove('active');
           headerNormal.classList.remove('hidden');
           searchInput.value = '';
-          triggerSearch(); // Listeyi sıfırla
+          triggerSearch();
       });
 
       searchInput.addEventListener('input', triggerSearch);
@@ -1555,7 +1650,6 @@
       // 1. SCROLL
       panels.forEach(panel => {
         panel.addEventListener('scroll', (e) => {
-          // Arama modundaysak header animasyonunu devre dışı bırak
           if (document.body.classList.contains('is-searching')) return;
 
           if(currentNav !== 'home' || !panel.classList.contains('active')) return;
@@ -1574,7 +1668,6 @@
       // 2. SWIPE
       panels.forEach(panel => {
         panel.addEventListener('touchstart', e => {
-            // Arama modundaysak swipe'ı devre dışı bırak
             if (document.body.classList.contains('is-searching')) return;
 
             if(currentNav !== 'home' || !panel.classList.contains('active')) return;
@@ -1726,21 +1819,14 @@
 
     function handleFileSource(source) {
         if (source === 'device') {
-             switchNav('home'); 
-            switchTab('device', true); 
+            scanDeviceForPDFs();
+            switchNav('home'); 
+            switchTab('device', true);
         } else if (source === 'browse_more') {
             alert('Cihazınızın dosya yöneticisi açılıyor...');
         } else {
             alert(`${source.toUpperCase()} kaynağına bağlanılıyor...`);
         }
-    }
-
-    function handleFabAction(action) {
-      if (action === 'scan') {
-          alert('Kamera açılıyor: Belge Tarama Modu...');
-      } else if (action === 'import') {
-          alert('Dosya Yöneticisi açılıyor: PDF Yükle...');
-      }
     }
     
     function sendHelpEmail(e) {
@@ -1771,7 +1857,8 @@
     window.deselectAllCards = deselectAllCards;
     window.deleteSelectedCards = deleteSelectedCards;
     window.shareSelectedCards = shareSelectedCards; 
-    window.printSelectedCards = printSelectedCards; 
+    window.printSelectedCards = printSelectedCards;
+    window.handleFileSelect = handleFileSelect;
 
   </script>
 </body>
