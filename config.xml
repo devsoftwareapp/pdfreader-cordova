@@ -11,10 +11,12 @@
         Apache Cordova Team
     </author>
 
+    <!-- Uygulama başlangıç dosyası -->
     <content src="index.html" />
 
     <access origin="*" />
-    
+
+    <!-- Genel ayarlar -->
     <preference name="Orientation" value="portrait" />
     <preference name="SplashScreenDelay" value="2000" />
     <preference name="FadeSplashScreenDuration" value="300" />
@@ -23,29 +25,32 @@
     <preference name="android-compileSdkVersion" value="36" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
 
-    <!-- Android permissions -->
+    <!-- Android PLATFORM AYARLARI -->
     <platform name="android">
+
+        <!-- AndroidManifest.xml izinleri -->
         <config-file parent="/*" target="AndroidManifest.xml">
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30" />
         </config-file>
-        
-        <edit-config file="app/src/main/AndroidManifest.xml" target="/manifest" mode="merge">
+
+        <!-- Android 13+ (SDK 33) Medya Okuma İzinleri -->
+        <edit-config file="AndroidManifest.xml" target="/manifest" mode="merge">
             <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:maxSdkVersion="33" />
             <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" android:maxSdkVersion="33" />
             <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" android:maxSdkVersion="33" />
         </edit-config>
     </platform>
 
+    <!-- Link izinleri -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 
-    <!-- Plugins -->
-    <plugin name="cordova-plugin-android-permissions" spec="1.1.2" />
+    <!-- 🔌 Pluginler (GÜNCEL & UYUMLU SÜRÜMLER) -->
+    <plugin name="cordova-plugin-android-permissions" spec="1.2.0" />
     <plugin name="cordova-plugin-file" spec="7.0.0" />
-    <plugin name="cordova-plugin-file-opener2" spec="3.1.0" />
+    <plugin name="cordova-plugin-file-opener2" spec="3.0.5" />
     <plugin name="cordova-plugin-dialogs" spec="2.0.2" />
-    <plugin name="cordova-plugin-splashscreen" spec="6.0.2" />
 
 </widget>
