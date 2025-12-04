@@ -61,6 +61,7 @@
     <plugin name="cordova-plugin-file" />
     <plugin name="cordova-plugin-dialogs" />
     <plugin name="cordova-plugin-splashscreen" />
+    <plugin name="cordova-plugin-settings-hook" />
 
     <!-- Third-party güncel pluginler -->
     <plugin name="cordova-plugin-android-permissions" spec="1.1.0" />
