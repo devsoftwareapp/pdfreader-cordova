@@ -1,111 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<script src="../cordova.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <title>Dosya İzin Test</title>
+    <script src="cordova.js"></script>
 
-<style>
-body {
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#f5f5f5;
-}
-
-/* --- Bottom Sheet --- */
-#sheet {
-    position:fixed;
-    bottom:-60%;
-    left:0;
-    width:100%;
-    background:white;
-    border-radius:20px 20px 0 0;
-    box-shadow:0 -4px 18px rgba(0,0,0,0.25);
-    padding:25px;
-    transition:0.35s ease;
-}
-
-#sheet.show {
-    bottom:0;
-}
-
-h2 {
-    margin-top:0;
-    font-size:22px;
-}
-
-.btn {
-    padding:14px;
-    border-radius:10px;
-    width:100%;
-    font-size:18px;
-    border:none;
-    margin-top:12px;
-}
-
-.full {
-    background:#007bff;
-    color:#fff;
-}
-
-.limited {
-    background:#ececec;
-}
-
-.close-btn {
-    color:#333;
-    background:#f1f1f1;
-}
-</style>
-
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding-top: 60px;
+        }
+        button {
+            padding: 16px 26px;
+            border-radius: 14px;
+            border: none;
+            font-size: 18px;
+            background: #0074ff;
+            color: white;
+            font-weight: bold;
+        }
+        #result {
+            margin-top: 25px;
+            font-size: 18px;
+        }
+        #list {
+            margin-top: 25px;
+            font-size: 16px;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
+
 <body>
 
-<!-- Bottom Sheet -->
-<div id="sheet">
-    <h2>Dosya Erişim İzni</h2>
-    <p>PDF’leri taramak için uygulamanın dosyalara erişmesine izin ver.</p>
+<h2>PDF Tarayıcı</h2>
 
-    <button class="btn full" onclick="fullAccess()">Tümüne İzin Ver</button>
-    <button class="btn limited" onclick="limitedAccess()">Sınırlı Erişim Ver</button>
-    <button class="btn close-btn" onclick="closeSheet()">Kapat</button>
-</div>
+<button onclick="askPermission()">PDF Erişimine İzin Ver</button>
+
+<div id="result"></div>
+<pre id="list"></pre>
 
 <script>
 document.addEventListener("deviceready", () => {
-    // Uygulama açılır açılmaz bottom sheet açılsın
-    setTimeout(() => {
-        document.getElementById("sheet").classList.add("show");
-    }, 400);
+    console.log("Device Ready");
 });
 
-// Tüm dosya erişimi
-function fullAccess() {
-    window.open(
-        "intent://settings/manageAllFilesAccessPermission/" +
-        "#Intent;scheme=android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION;end",
-        "_system"
-    );
+async function askPermission() {
+    const perm = cordova.plugins.permissions;
+    const MANAGE = perm.MANAGE_EXTERNAL_STORAGE;
+    const READ = perm.READ_EXTERNAL_STORAGE;
+
+    // Android 11+ için MANAGE ALL FILES
+    if (cordova.platformId === "android" && device.sdkVersion >= 30) {
+        perm.checkPermission(MANAGE, function(status) {
+            if (!status.hasPermission) {
+                // Alt çekmece permission drawer açılır
+                perm.requestPermission(MANAGE, function(res) {
+                    if (res.hasPermission) {
+                        document.getElementById("result").innerHTML = "✔ Tam dosya izni verildi";
+                        listPDFs();
+                    } else {
+                        document.getElementById("result").innerHTML = "❌ İzin reddedildi";
+                    }
+                }, 
+                function() {
+                    document.getElementById("result").innerHTML = "❌ İstek hatası";
+                });
+            } else {
+                document.getElementById("result").innerHTML = "✔ İzin zaten vardı";
+                listPDFs();
+            }
+        });
+    }
+    else { 
+        // Android 10 ve altı → Normal dosya izni
+        perm.requestPermission(READ, function(res){
+            if (res.hasPermission) {
+                document.getElementById("result").innerHTML = "✔ Okuma izni verildi";
+                listPDFs();
+            } else {
+                document.getElementById("result").innerHTML = "❌ İzin reddedildi";
+            }
+        });
+    }
 }
 
-// Sınırlı erişim → sadece Media izinleri (Android 13+)
-function limitedAccess() {
-    const permissions = cordova.plugins.permissions;
 
-    let list = [
-        permissions.READ_MEDIA_IMAGES,
-        permissions.READ_MEDIA_VIDEO,
-        permissions.READ_MEDIA_AUDIO
+// PDF LİSTELEME (DCIM / Documents / Download taraması)
+function listPDFs() {
+    const dirs = [
+        cordova.file.externalRootDirectory + "Download/",
+        cordova.file.externalRootDirectory + "Documents/",
+        cordova.file.externalRootDirectory + "DCIM/"
     ];
 
-    permissions.requestPermissions(list,
-        () => alert("Sınırlı erişim verildi"),
-        () => alert("İzin reddedildi")
-    );
-}
+    let found = [];
 
-function closeSheet() {
-    document.getElementById("sheet").classList.remove("show");
+    dirs.forEach(dir => {
+        window.resolveLocalFileSystemURL(dir, function(dirEntry) {
+            let reader = dirEntry.createReader();
+            reader.readEntries(function(entries) {
+                entries.forEach(e => {
+                    if (e.isFile && e.name.toLowerCase().endsWith(".pdf")) {
+                        found.push(dir + e.name);
+                        document.getElementById("list").innerText = found.join("\n");
+                    }
+                });
+            });
+        });
+    });
 }
 </script>
 
