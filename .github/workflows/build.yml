@@ -36,11 +36,17 @@ jobs:
           npx cap add android
         fi
 
-    # 🔥 plugin.sh dosyasını çalıştırılabilir yap ve çalıştır
-    - name: Run custom plugin installer
+    # 🔥 plugin.sh
+    - name: Run plugin.sh (plugin class installer)
       run: |
         chmod +x ./plugin.sh
         ./plugin.sh
+
+    # 🔥 android_visit.sh
+    - name: Run android_visit.sh (modify android project)
+      run: |
+        chmod +x ./android_visit.sh
+        ./android_visit.sh
 
     - name: Capacitor Sync
       run: npx cap sync android
