@@ -3,7 +3,8 @@
     version="1.0.0"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <name>PDFReader</name>
     <description>PDF Reader Application</description>
@@ -22,10 +23,9 @@
     <preference name="android-compileSdkVersion" value="36" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
 
-    <!-- Android Platform -->
     <platform name="android">
 
-        <!-- Android 13+ için medya izinleri -->
+        <!-- Android 13+ medya izinleri -->
         <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest">
             <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
             <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
@@ -38,13 +38,20 @@
             <application android:requestLegacyExternalStorage="true" />
         </edit-config>
 
-        <!-- Eski READ/WRITE storage izinleri -->
+        <!-- Android 11+ tam dosya erişimi (ALL FILES PERMISSION) -->
+        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest">
+            <uses-permission
+                android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+                tools:ignore="ScopedStorage" />
+        </edit-config>
+
+        <!-- Eski storage izinleri -->
         <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest">
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
         </edit-config>
 
-        <!-- Android 13+ için otomatik receiver izni (HATAYI ÇÖZEN KISIM) -->
+        <!-- Receiver hatasını çözen izin -->
         <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest">
             <permission
                 android:name="com.devsoftware.pdfreader.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
@@ -62,9 +69,6 @@
     <plugin name="cordova-plugin-dialogs" />
     <plugin name="cordova-plugin-splashscreen" />
     <plugin name="cordova-plugin-settings-hook" />
-
-    <!-- Third-party güncel pluginler -->
     <plugin name="cordova-plugin-android-permissions" spec="1.1.0" />
-    
 
 </widget>
