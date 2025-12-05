@@ -39,12 +39,20 @@ EOF
 
 echo "✔️ Plugin sınıfı oluşturuldu: $PLUGIN_FILE"
 
-MAIN_ACTIVITY="$ANDROID_PATH/$(echo $PLUGIN_PACKAGE | tr . /)/MainActivity.java"
+# -------- MAINACTIVITY OTOMATİK BUL --------
+MAIN_ACTIVITY=$(find android/app/src/main/java -name "MainActivity.java")
+
+if [ -z "$MAIN_ACTIVITY" ]; then
+    echo "❌ MainActivity bulunamadı!"
+    exit 0
+fi
+
+echo "➡️ Bulunan MainActivity: $MAIN_ACTIVITY"
 
 if grep -q "$PLUGIN_CLASS" "$MAIN_ACTIVITY"; then
-    echo "ℹ️ Plugin zaten MainActivity'de kayıtlı."
+    echo "ℹ️ Plugin zaten kayıtlı."
 else
-    echo "➡️ MainActivity'ye plugin register ediliyor..."
+    echo "➡️ MainActivity'ye plugin kaydediliyor..."
     sed -i "/super.onCreate/a\        registerPlugin($PLUGIN_CLASS.class);" "$MAIN_ACTIVITY"
 fi
 
