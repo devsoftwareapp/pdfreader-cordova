@@ -4,13 +4,10 @@ android {
     namespace "com.pdfreader.app"
     compileSdk rootProject.ext.compileSdkVersion
 
-    // 🔥 JAVA VE KOTLIN SÜRÜMÜ — EN KRİTİK KISIM
+    // 🔥 YALNIZCA BUNU EKLE → Java 17
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
     }
 
     defaultConfig {
