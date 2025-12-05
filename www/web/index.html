@@ -1,62 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PDF Reader</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        button { padding: 14px 22px; font-size: 18px; }
-        #pdfList { margin-top: 30px; }
-        .item { padding: 10px; border-bottom: 1px solid #ccc; }
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { font-size: 28px; margin-bottom: 20px; }
+        button {
+            width: 100%; padding: 18px; font-size: 18px;
+            margin-bottom: 15px; border-radius: 8px;
+            border: 1px solid #ccc; background: #f2f2f2;
+        }
     </style>
 </head>
+
 <body>
+    <h1>PDF Reader</h1>
 
-<h2>PDF Reader</h2>
+    <button id="btnPermission">📁 Tüm Dosya Erişimine İzin Ver</button>
 
-<button onclick="openAllFilesAccessSettings()">📂 Tüm Dosya Erişimine İzin Ver</button>
-<button onclick="loadPDFs()">📄 PDF'leri Tara</button>
+    <script type="module">
+        import { App } from "https://cdn.jsdelivr.net/npm/@capacitor/app@5/dist/esm/index.js";
 
-<div id="pdfList"></div>
-
-<script>
-/* Android 11+ MANAGE_EXTERNAL_STORAGE ayarlarına gider */
-function openAllFilesAccessSettings() {
-    window.open(
-        "intent://settings/manageAllFilesAccessPermission/" +
-        "#Intent;scheme=android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION;end",
-        "_system"
-    );
-}
-
-/* PDF'leri yükle (custom plugin üzerinden) */
-async function loadPDFs() {
-    if (!window.AndroidFullFileAccess) {
-        alert("Plugin yüklenmedi!");
-        return;
-    }
-
-    try {
-        const result = await window.AndroidFullFileAccess.getAllPdfs();
-        const list = result?.files || [];
-
-        const container = document.getElementById("pdfList");
-        container.innerHTML = "<h3>Bulunan PDF Dosyaları:</h3>";
-
-        if (list.length === 0) {
-            container.innerHTML += "<p>PDF bulunamadı.</p>";
-            return;
-        }
-
-        list.forEach(file => {
-            container.innerHTML += `<div class='item'>📄 ${file}</div>`;
+        document.getElementById("btnPermission").addEventListener("click", async () => {
+            try {
+                // Android 11+ için MANAGE_ALL_FILES_ACCESS_PERMISSION ekranı:
+                await App.openUrl({
+                    url: "app-settings:android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION"
+                });
+            } catch (err) {
+                alert("Ayarlar açılamadı: " + err);
+            }
         });
-
-    } catch (err) {
-        alert("PDF tarama sırasında hata: " + err);
-    }
-}
-</script>
-
+    </script>
 </body>
 </html>
