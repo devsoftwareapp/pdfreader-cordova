@@ -2,7 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Dosya İzin Test</title>
+
+    <!-- Burada ../ KULLANILMAZ çünkü index.html zaten www içindedir -->
     <script src="cordova.js"></script>
 
     <style>
@@ -26,82 +27,74 @@
         }
         #list {
             margin-top: 25px;
-            font-size: 16px;
             white-space: pre-wrap;
+            font-size: 15px;
         }
     </style>
 </head>
 
 <body>
 
-<h2>PDF Tarayıcı</h2>
-
-<button onclick="askPermission()">PDF Erişimine İzin Ver</button>
+<h2>PDF Erişim Testi</h2>
+<button onclick="askPermission()">İzin Ver</button>
 
 <div id="result"></div>
 <pre id="list"></pre>
 
 <script>
 document.addEventListener("deviceready", () => {
-    console.log("Device Ready");
+    console.log("Cihaz hazır");
 });
 
-async function askPermission() {
+function askPermission() {
     const perm = cordova.plugins.permissions;
     const MANAGE = perm.MANAGE_EXTERNAL_STORAGE;
     const READ = perm.READ_EXTERNAL_STORAGE;
 
-    // Android 11+ için MANAGE ALL FILES
-    if (cordova.platformId === "android" && device.sdkVersion >= 30) {
-        perm.checkPermission(MANAGE, function(status) {
+    // Android 11+ (SDK 30+) için tam dosya izni
+    if (device.sdkVersion >= 30) {
+        perm.checkPermission(MANAGE, status => {
             if (!status.hasPermission) {
-                // Alt çekmece permission drawer açılır
-                perm.requestPermission(MANAGE, function(res) {
+                perm.requestPermission(MANAGE, res => {
                     if (res.hasPermission) {
                         document.getElementById("result").innerHTML = "✔ Tam dosya izni verildi";
                         listPDFs();
                     } else {
                         document.getElementById("result").innerHTML = "❌ İzin reddedildi";
                     }
-                }, 
-                function() {
-                    document.getElementById("result").innerHTML = "❌ İstek hatası";
                 });
             } else {
                 document.getElementById("result").innerHTML = "✔ İzin zaten vardı";
                 listPDFs();
             }
         });
+        return;
     }
-    else { 
-        // Android 10 ve altı → Normal dosya izni
-        perm.requestPermission(READ, function(res){
-            if (res.hasPermission) {
-                document.getElementById("result").innerHTML = "✔ Okuma izni verildi";
-                listPDFs();
-            } else {
-                document.getElementById("result").innerHTML = "❌ İzin reddedildi";
-            }
-        });
-    }
+
+    // Android 10 ve altı için normal dosya izni
+    perm.requestPermission(READ, res => {
+        if (res.hasPermission) {
+            document.getElementById("result").innerHTML = "✔ Okuma izni verildi";
+            listPDFs();
+        } else {
+            document.getElementById("result").innerHTML = "❌ İzin reddedildi";
+        }
+    });
 }
 
-
-// PDF LİSTELEME (DCIM / Documents / Download taraması)
+// PDF Arama
 function listPDFs() {
     const dirs = [
         cordova.file.externalRootDirectory + "Download/",
         cordova.file.externalRootDirectory + "Documents/",
         cordova.file.externalRootDirectory + "DCIM/"
     ];
-
     let found = [];
 
     dirs.forEach(dir => {
-        window.resolveLocalFileSystemURL(dir, function(dirEntry) {
-            let reader = dirEntry.createReader();
-            reader.readEntries(function(entries) {
-                entries.forEach(e => {
+        window.resolveLocalFileSystemURL(dir, entry => {
+            entry.createReader().readEntries(files => {
+                files.forEach(e => {
                     if (e.isFile && e.name.toLowerCase().endsWith(".pdf")) {
                         found.push(dir + e.name);
                         document.getElementById("list").innerText = found.join("\n");
