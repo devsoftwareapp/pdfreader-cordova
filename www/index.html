@@ -1,108 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <meta charset="utf-8" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PDF Reader</title>
 
-    <!-- Burada ../ KULLANILMAZ çünkü index.html zaten www içindedir -->
-    <script src="cordova.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f2f2f2;
+    }
 
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            padding-top: 60px;
-        }
-        button {
-            padding: 16px 26px;
-            border-radius: 14px;
-            border: none;
-            font-size: 18px;
-            background: #0074ff;
-            color: white;
-            font-weight: bold;
-        }
-        #result {
-            margin-top: 25px;
-            font-size: 18px;
-        }
-        #list {
-            margin-top: 25px;
-            white-space: pre-wrap;
-            font-size: 15px;
-        }
-    </style>
+    header {
+        background: #6200ee;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .btn {
+        background: #6200ee;
+        color: white;
+        padding: 14px;
+        border: none;
+        width: 90%;
+        margin: 20px auto;
+        display: block;
+        border-radius: 8px;
+        font-size: 18px;
+    }
+
+    .list {
+        margin: 20px;
+    }
+
+    .pdf-item {
+        background: white;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+    }
+
+    /* Bottom Sheet */
+    #sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -300px;
+        background: #fff;
+        box-shadow: 0 -3px 10px rgba(0,0,0,0.3);
+        border-radius: 15px 15px 0 0;
+        padding: 20px;
+        transition: 0.3s ease;
+        text-align: center;
+    }
+
+    #sheet.show {
+        bottom: 0;
+    }
+</style>
 </head>
 
 <body>
 
-<h2>PDF Erişim Testi</h2>
-<button onclick="askPermission()">İzin Ver</button>
+<header>PDF Reader</header>
 
-<div id="result"></div>
-<pre id="list"></pre>
+<button class="btn" id="openSheetBtn">İzin / PDF Listeleme</button>
 
-<script>
-document.addEventListener("deviceready", () => {
-    console.log("Cihaz hazır");
-});
+<div id="pdfList" class="list"></div>
 
-function askPermission() {
-    const perm = cordova.plugins.permissions;
-    const MANAGE = perm.MANAGE_EXTERNAL_STORAGE;
-    const READ = perm.READ_EXTERNAL_STORAGE;
+<!-- Bottom Sheet -->
+<div id="sheet">
+    <h3>Dosya Erişim İzni</h3>
+    <p>PDF dosyalarını taramak için erişim izni gerekir.</p>
+    <button class="btn" id="askPermission">İzin Ver</button>
+</div>
 
-    // Android 11+ (SDK 30+) için tam dosya izni
-    if (device.sdkVersion >= 30) {
-        perm.checkPermission(MANAGE, status => {
-            if (!status.hasPermission) {
-                perm.requestPermission(MANAGE, res => {
-                    if (res.hasPermission) {
-                        document.getElementById("result").innerHTML = "✔ Tam dosya izni verildi";
-                        listPDFs();
-                    } else {
-                        document.getElementById("result").innerHTML = "❌ İzin reddedildi";
-                    }
-                });
-            } else {
-                document.getElementById("result").innerHTML = "✔ İzin zaten vardı";
-                listPDFs();
-            }
-        });
-        return;
+<script type="module">
+import { Filesystem, Directory } from "https://cdn.jsdelivr.net/npm/@capacitor/filesystem@5/dist/esm/index.js";
+import { App } from "https://cdn.jsdelivr.net/npm/@capacitor/app@5/dist/esm/index.js";
+
+const sheet = document.getElementById("sheet");
+const openBtn = document.getElementById("openSheetBtn");
+const askBtn = document.getElementById("askPermission");
+const listDiv = document.getElementById("pdfList");
+
+openBtn.onclick = () => {
+    sheet.classList.add("show");
+};
+
+askBtn.onclick = async () => {
+    sheet.classList.remove("show");
+
+    try {
+        // Android SAF (gerçek izin penceresi)
+        const pick = await Filesystem.requestPermissions();
+        console.log("Permission result:", pick);
+
+        await listPDFs();
+
+    } catch (e) {
+        alert("İzin alınamadı!");
+        console.error(e);
     }
+};
 
-    // Android 10 ve altı için normal dosya izni
-    perm.requestPermission(READ, res => {
-        if (res.hasPermission) {
-            document.getElementById("result").innerHTML = "✔ Okuma izni verildi";
-            listPDFs();
-        } else {
-            document.getElementById("result").innerHTML = "❌ İzin reddedildi";
-        }
-    });
-}
+async function listPDFs() {
+    listDiv.innerHTML = "<h3>PDF taranıyor...</h3>";
 
-// PDF Arama
-function listPDFs() {
-    const dirs = [
-        cordova.file.externalRootDirectory + "Download/",
-        cordova.file.externalRootDirectory + "Documents/",
-        cordova.file.externalRootDirectory + "DCIM/"
-    ];
-    let found = [];
-
-    dirs.forEach(dir => {
-        window.resolveLocalFileSystemURL(dir, entry => {
-            entry.createReader().readEntries(files => {
-                files.forEach(e => {
-                    if (e.isFile && e.name.toLowerCase().endsWith(".pdf")) {
-                        found.push(dir + e.name);
-                        document.getElementById("list").innerText = found.join("\n");
-                    }
-                });
-            });
+    try {
+        const result = await Filesystem.readdir({
+            path: "",
+            directory: Directory.Documents
         });
-    });
+
+        const pdfs = result.files.filter(f => f.name.toLowerCase().endsWith(".pdf"));
+
+        if (pdfs.length === 0) {
+            listDiv.innerHTML = "<p>Cihazda PDF bulunamadı.</p>";
+            return;
+        }
+
+        listDiv.innerHTML = "<h3>Bulunan PDF Dosyaları:</h3>";
+
+        pdfs.forEach(f => {
+            const item = document.createElement("div");
+            item.className = "pdf-item";
+            item.innerText = f.name;
+            listDiv.appendChild(item);
+        });
+
+    } catch (e) {
+        listDiv.innerHTML = "<p>Erişim hatası: " + e + "</p>";
+        console.error(e);
+    }
 }
 </script>
 
