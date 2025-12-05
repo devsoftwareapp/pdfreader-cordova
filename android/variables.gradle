@@ -3,6 +3,10 @@ ext {
     compileSdkVersion = 35
     targetSdkVersion = 35
 
+    // ---- Java 17 Zorunlu Ayar ----
+    javaVersion = JavaVersion.VERSION_17
+    // ------------------------------
+
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'
