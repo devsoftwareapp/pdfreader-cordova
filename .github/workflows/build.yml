@@ -35,6 +35,13 @@ jobs:
           npm install @capacitor/android
           npx cap add android
         fi
+
+    # 🔥 plugin.sh dosyasını çalıştırılabilir yap ve çalıştır
+    - name: Run custom plugin installer
+      run: |
+        chmod +x ./plugin.sh
+        ./plugin.sh
+
     - name: Capacitor Sync
       run: npx cap sync android
 
@@ -42,7 +49,6 @@ jobs:
       run: |
         cd android
         ./gradlew assembleDebug
-
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
