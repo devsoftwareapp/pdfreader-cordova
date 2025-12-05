@@ -1,6 +1,6 @@
 {
-  "appId": "com.pdfreader.app",
-  "appName": "pdfreader",
+  "appId": "com.devsoftware.pdfreader",
+  "appName": "PDF Reader",
   "webDir": "www/web",
   "bundledWebRuntime": false
 }
