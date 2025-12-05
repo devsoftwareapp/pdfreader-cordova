@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Reader</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { font-size: 28px; margin-bottom: 20px; }
+        button {
+            width: 100%; padding: 18px; font-size: 18px;
+            margin-bottom: 15px; border-radius: 8px;
+            border: 1px solid #ccc; background: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PDF Reader</h1>
+
+    <button id="btnPermission">📁 Tüm Dosya Erişimine İzin Ver</button>
+
+    <script type="module">
+        import { App } from "https://cdn.jsdelivr.net/npm/@capacitor/app@5/dist/esm/index.js";
+
+        document.getElementById("btnPermission").addEventListener("click", async () => {
+            try {
+                // Android 11+ için MANAGE_ALL_FILES_ACCESS_PERMISSION ekranı:
+                await App.openUrl({
+                    url: "app-settings:android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION"
+                });
+            } catch (err) {
+                alert("Ayarlar açılamadı: " + err);
+            }
+        });
+    </script>
+</body>
+</html>
