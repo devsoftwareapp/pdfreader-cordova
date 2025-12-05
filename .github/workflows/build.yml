@@ -8,16 +8,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout (boş repo bile olsa gerekli)
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Node 20 kur
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Java 17 kur (Android için)
-        uses: actions/setup-java@v3
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
@@ -33,7 +33,7 @@ jobs:
           npm init -y
           npm install @capacitor/core @capacitor/cli
 
-          # capacitor.config.json oluştur
+          # capacitor.config.json
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.example.hello",
@@ -43,7 +43,7 @@ jobs:
           }
           EOF
 
-          # www klasörünü ve index.html dosyasını oluştur
+          # www/index.html
           mkdir www
           cat << 'EOF' > www/index.html
           <!DOCTYPE html>
@@ -67,7 +67,7 @@ jobs:
           ./gradlew assembleDebug
 
       - name: APK'yi artifact olarak yükle
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4   # ← GÜNCEL
         with:
           name: hello-capacitor-apk
           path: hello-capacitor/android/app/build/outputs/apk/debug/*.apk
