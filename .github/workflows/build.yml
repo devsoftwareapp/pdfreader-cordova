@@ -9,35 +9,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: 20
 
-    - name: Install project dependencies
+    - name: Install NPM deps
       run: npm install
 
-    # Capacitor CLI global kurmaya gerek yok — proje içi çalışır.
+    # 👉 Capacitor kurulumunu otomatik yapan ek adım
+    - name: Install Capacitor Core
+      run: npm install @capacitor/core @capacitor/cli --save
 
-    - name: Create Capacitor Android platform
+    # 👉 Capacitor Android runtime
+    - name: Install Capacitor Android
+      run: npm install @capacitor/android --save
+
+    # 👉 capacitor.config.json otomatik oluştur
+    - name: Create capacitor.config.json
       run: |
-        npx cap add android
+        cat << 'EOF' > capacitor.config.json
+        {
+          "appId": "com.devsoftware.pdfreader",
+          "appName": "PDFReader",
+          "webDir": "www",
+          "bundledWebRuntime": false
+        }
+        EOF
 
-    - name: Copy Web Assets to Android
-      run: |
-        npx cap sync android
+    # 👉 Android platformunu ekle
+    - name: Add Android platform
+      run: npx cap add android
 
-    - name: Build Android APK (debug)
+    # 👉 Web dosyalarını native projeye kopyala
+    - name: Sync web → android
+      run: npx cap sync android
+
+    # 👉 Android APK derle
+    - name: Build APK (debug)
       run: |
         cd android
         ./gradlew assembleDebug
 
-    - name: Upload Android Debug APK
+    # 👉 Çıktıyı yolla
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: android-debug-apk
         path: android/app/build/outputs/apk/debug/*.apk
-        retention-days: 7
