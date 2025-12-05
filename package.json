@@ -1,23 +1,14 @@
 {
-  "name": "com.devsoftware.pdfreader",
-  "displayName": "PDFReader",
+  "name": "pdfreader",
   "version": "1.0.0",
-  "description": "A sample Apache Cordova application that responds to the deviceready event.",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo 'Cordova web build burada yok, www zaten hazır'"
   },
-  "keywords": [
-    "ecosystem:cordova"
-  ],
-  "author": "Apache Cordova Team",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "cordova-android": "^14.0.1"
-  },
-  "cordova": {
-    "platforms": [
-      "android"
-    ]
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/filesystem": "latest",
+    "@capacitor/app": "latest",
+    "@capacitor/device": "latest"
   }
 }
