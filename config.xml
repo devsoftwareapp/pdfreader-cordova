@@ -8,7 +8,7 @@
     <name>PDFReader</name>
     <description>PDF Reader Application</description>
 
-    <content src="index.html" />
+    <content src="www/index.html" />
 
     <access origin="*" />
 
